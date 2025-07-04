@@ -109,7 +109,7 @@
 
     const { protocol, host } = window.location
     const isLocalhost = window.location.hostname === 'localhost'
-    const pathPrefix = isLocalhost ? '/tab.html?id=' : '/'
+    const pathPrefix = isLocalhost ? '/?id=' : '/'
     const pb = new PocketBase(isLocalhost ? 'http://localhost:8090' : 'https://pb.th61.com')
 
     const main = async () => {
@@ -119,7 +119,7 @@
       let record, saveTimeout
 
       try {
-        const id = isLocalhost ? URL(window.location.href).searchParams.get('id') : window.location.pathname.slice(1)
+        const id = isLocalhost ? new URL(window.location.href).searchParams.get('id') : window.location.pathname.slice(1)
 
         record = await pb.collection('tabs').getOne(id)
       } catch (e) {
@@ -130,6 +130,7 @@
       input.value = `${protocol}//${host}${pathPrefix}${record.id}`
       history.replaceState(null, '', `${pathPrefix}${record.id}`)
       textarea.removeAttribute('readonly')
+      textarea.focus()
 
       pb.collection('tabs').subscribe(record.id, (e) => {
         if (textarea.value !== e.record.content) {
