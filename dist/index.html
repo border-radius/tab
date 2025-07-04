@@ -107,8 +107,9 @@
     import PocketBase from 'https://unpkg.com/pocketbase@0.26.1/dist/pocketbase.es.mjs'
     import qr from 'https://unpkg.com/qr@0.5.0/index.js'
 
-    const { protocol, host } = window.location
-    const isLocalhost = window.location.hostname === 'localhost'
+    const { protocol, host, hostname, href, pathname } = window.location
+    const { searchParams } = new URL(href)
+    const isLocalhost = hostname === 'localhost'
     const pathPrefix = isLocalhost ? '/?id=' : '/'
     const pb = new PocketBase(isLocalhost ? 'http://localhost:8090' : 'https://pb.th61.com')
 
@@ -119,7 +120,7 @@
       let record, saveTimeout
 
       try {
-        const id = isLocalhost ? new URL(window.location.href).searchParams.get('id') : window.location.pathname.slice(1)
+        const id = isLocalhost ? searchParams.get('id') : pathname.slice(1)
 
         record = await pb.collection('tabs').getOne(id)
       } catch (e) {
@@ -128,8 +129,12 @@
 
       textarea.value = record.content
       input.value = `${protocol}//${host}${pathPrefix}${record.id}`
-      history.replaceState(null, '', `${pathPrefix}${record.id}`)
-      textarea.removeAttribute('readonly')
+
+      if (!searchParams.get('ro')) {
+        history.replaceState(null, '', `${pathPrefix}${record.id}`)
+        textarea.removeAttribute('readonly')
+      }
+
       textarea.focus()
 
       pb.collection('tabs').subscribe(record.id, (e) => {
