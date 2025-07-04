@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>tab.th61.com</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 16px;
+      height: 100vh;
+      box-sizing: border-box;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+
+    body,
+    input,
+    textarea {
+      font: 14px/1.2 monospace;
+    }
+
+    section {
+      width: 100%;
+      height: 100%;
+      max-width: 800px;
+      max-height: 500px;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #000;
+      border-radius: 4px;
+    }
+
+    header {
+      padding-right: 16px;
+      display: flex;
+      justify-content: stretch;
+      align-items: center;
+      border-bottom: 1px solid #000;
+    }
+
+    svg {
+      cursor: pointer;
+    }
+
+    input,
+    textarea {
+      padding: 16px 16px;
+      flex-grow: 1;
+      border: none;
+      resize: none;
+      background: none;
+    }
+
+    textarea:focus,
+    input:focus {
+      outline: none;
+    }
+
+    footer {
+      padding: 16px 0 0;
+      font-size: 10px;
+      color: #999;
+      user-select: none;
+    }
+
+    img {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+  </style>
+</head>
+
+<body>
+  <section>
+    <header>
+      <input type="text" value="" onclick="this.select(); document.execCommand('copy');" readonly>
+      <svg fill="#000000" width="24px" height="24px" viewBox="0 0 122.88 122.88" version="1.1" id="Layer_1"
+        xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+        style="enable-background:new 0 0 122.88 122.7" xml:space="preserve">
+        <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+        <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+        <g id="SVGRepo_iconCarrier">
+          <style type="text/css">
+            .st0 {
+              fill-rule: evenodd;
+              clip-rule: evenodd;
+            }
+          </style>
+          <g>
+            <path class="st0"
+              d="M0.18,0h44.63v44.45H0.18V0L0.18,0z M111.5,111.5h11.38v11.2H111.5V111.5L111.5,111.5z M89.63,111.48h11.38 v10.67H89.63h-0.01H78.25v-21.82h11.02V89.27h11.21V67.22h11.38v10.84h10.84v11.2h-10.84v11.2h-11.21h-0.17H89.63V111.48 L89.63,111.48z M55.84,89.09h11.02v-11.2H56.2v-11.2h10.66v-11.2H56.02v11.2H44.63v-11.2h11.2V22.23h11.38v33.25h11.02v11.2h10.84 v-11.2h11.38v11.2H89.63v11.2H78.25v22.05H67.22v22.23H55.84V89.09L55.84,89.09z M111.31,55.48h11.38v11.2h-11.38V55.48 L111.31,55.48z M22.41,55.48h11.38v11.2H22.41V55.48L22.41,55.48z M0.18,55.48h11.38v11.2H0.18V55.48L0.18,55.48z M55.84,0h11.38 v11.2H55.84V0L55.84,0z M0,78.06h44.63v44.45H0V78.06L0,78.06z M10.84,88.86h22.95v22.86H10.84V88.86L10.84,88.86z M78.06,0h44.63 v44.45H78.06V0L78.06,0z M88.91,10.8h22.95v22.86H88.91V10.8L88.91,10.8z M11.02,10.8h22.95v22.86H11.02V10.8L11.02,10.8z">
+            </path>
+          </g>
+        </g>
+      </svg>
+    </header>
+    <textarea placeholder="This text will sync across all devices where this tab is open." readonly></textarea>
+  </section>
+  <footer>Content in this tab will be automatically deleted 24 hours after the last modification.</footer>
+  <script type="module">
+    import PocketBase from 'https://unpkg.com/pocketbase@0.26.1/dist/pocketbase.es.mjs'
+    import qr from 'https://unpkg.com/qr@0.5.0/index.js'
+
+    const { protocol, host } = window.location
+    const isLocalhost = window.location.hostname === 'localhost'
+    const pathPrefix = isLocalhost ? '/tab.html?id=' : '/'
+    const pb = new PocketBase(isLocalhost ? 'http://localhost:8090' : 'https://pb.th61.com')
+
+    const main = async () => {
+      const svg = document.querySelector('svg')
+      const input = document.querySelector('input')
+      const textarea = document.querySelector('textarea')
+      let record, saveTimeout
+
+      try {
+        const id = isLocalhost ? URL(window.location.href).searchParams.get('id') : window.location.pathname.slice(1)
+
+        record = await pb.collection('tabs').getOne(id)
+      } catch (e) {
+        record = await pb.collection('tabs').create({ content: '' })
+      }
+
+      textarea.value = record.content
+      input.value = `${protocol}//${host}${pathPrefix}${record.id}`
+      history.replaceState(null, '', `${pathPrefix}${record.id}`)
+      textarea.removeAttribute('readonly')
+
+      pb.collection('tabs').subscribe(record.id, (e) => {
+        if (textarea.value !== e.record.content) {
+          textarea.value = e.record.content
+        }
+      })
+
+      textarea.addEventListener('input', e => {
+        clearTimeout(saveTimeout)
+        saveTimeout = setTimeout(async () => {
+          await pb.collection('tabs').update(record.id, { content: textarea.value })
+        }, 500)
+      })
+
+      svg.addEventListener('click', e => {
+        const img = document.body.appendChild(document.createElement('img'))
+
+        img.src = URL.createObjectURL(new Blob([qr(input.value, 'gif', { ecc: 'high', scale: 4 })], { type: 'image/gif' }))
+
+        setTimeout(() => {
+          window.addEventListener('click', function listener (e) {
+            window.removeEventListener('click', listener)
+            img.parentNode.removeChild(img)
+          })
+        })
+      })
+    }
+
+    main()
+  </script>
+</body>
+
+</html>
