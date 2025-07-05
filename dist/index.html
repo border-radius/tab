@@ -111,7 +111,10 @@
     const { searchParams } = new URL(href)
     const isLocalhost = hostname === 'localhost'
     const pathPrefix = isLocalhost ? '/?id=' : '/'
-    const pb = new PocketBase(isLocalhost ? 'http://localhost:8090' : 'https://pb.th61.com')
+    const instance = Math.random().toString(36).slice(2)
+    const pb = new PocketBase(
+      isLocalhost ? 'http://localhost:8090' : 'https://pb.th61.com'
+    )
 
     const main = async () => {
       const svg = document.querySelector('svg')
@@ -124,7 +127,7 @@
 
         record = await pb.collection('tabs').getOne(id)
       } catch (e) {
-        record = await pb.collection('tabs').create({ content: '' })
+        record = await pb.collection('tabs').create({ content: '', instance })
       }
 
       textarea.value = record.content
@@ -137,8 +140,11 @@
 
       textarea.focus()
 
-      pb.collection('tabs').subscribe(record.id, (e) => {
-        if (textarea.value !== e.record.content) {
+      pb.collection('tabs').subscribe(record.id, e => {
+        if (
+          e.record.instance !== instance
+          && textarea.value !== e.record.content
+        ) {
           textarea.value = e.record.content
         }
       })
@@ -146,14 +152,22 @@
       textarea.addEventListener('input', e => {
         clearTimeout(saveTimeout)
         saveTimeout = setTimeout(async () => {
-          await pb.collection('tabs').update(record.id, { content: textarea.value })
+          await pb.collection('tabs').update(record.id, {
+            content: textarea.value,
+            instance,
+          })
         }, 500)
       })
 
       svg.addEventListener('click', e => {
         const img = document.body.appendChild(document.createElement('img'))
 
-        img.src = URL.createObjectURL(new Blob([qr(input.value, 'gif', { ecc: 'high', scale: 4 })], { type: 'image/gif' }))
+        img.src = URL.createObjectURL(
+          new Blob(
+            [qr(input.value, 'gif', { ecc: 'high', scale: 4 })],
+            { type: 'image/gif' }
+          )
+        )
 
         setTimeout(() => {
           window.addEventListener('click', function listener (e) {
