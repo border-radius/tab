@@ -1,6 +1,8 @@
 # Seamlessly Syncable Tab Across Devices
 
-A shared text clipboard that allows you to effortlessly sync content across all your internet-connected devices.
+A shared text/file clipboard that allows you to effortlessly sync content across all your internet-connected devices.
+
+![tab.th61.com](tab.png)
 
 ## Getting Started
 
