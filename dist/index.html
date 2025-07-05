@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>tab.th61.com</title>
+  <title>tab</title>
   <style>
     body {
       margin: 0;
@@ -19,15 +19,16 @@
 
     body,
     input,
+    input::file-selector-button,
     textarea {
       font: 14px/1.2 monospace;
+      border: none;
+      background: none;
     }
 
     section {
       width: 100%;
-      height: 100%;
       max-width: 800px;
-      max-height: 500px;
       display: flex;
       flex-direction: column;
       border: 1px solid #000;
@@ -46,13 +47,25 @@
       cursor: pointer;
     }
 
+    textarea {
+      height: 100vh;
+      max-height: 350px;
+      resize: none;
+    }
+
     input,
     textarea {
       padding: 16px 16px;
       flex-grow: 1;
-      border: none;
-      resize: none;
-      background: none;
+    }
+
+    input[type=file] {
+      color: #999;
+    }
+
+    input[type=file]::file-selector-button {
+      padding: 0;
+      text-decoration: underline;
     }
 
     textarea:focus,
@@ -72,6 +85,20 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
+    }
+
+    ul {
+      margin: 0;
+      padding: 0;
+      list-style-type: none;
+    }
+
+    li {
+      padding: 16px 16px 0;
+    }
+
+    a {
+      color: #000;
     }
   </style>
 </head>
@@ -101,6 +128,8 @@
       </svg>
     </header>
     <textarea maxlength="5000" placeholder="This text will sync across all devices where this tab is open." readonly></textarea>
+    <ul></ul>
+    <input type="file">
   </section>
   <footer>Content in this tab will be automatically deleted 24 hours after the last modification.</footer>
   <script type="module">
@@ -116,9 +145,26 @@
       isLocalhost ? 'http://localhost:8090' : 'https://pb.th61.com'
     )
 
+    const updateFiles = (record) => {
+      const ul = document.querySelector('ul')
+
+      ul.innerHTML = ''
+
+      for (let file of record.files) {
+        const a = ul
+          .appendChild(document.createElement('li'))
+          .appendChild(document.createElement('a'))
+
+        a.href = pb.files.getURL(record, file)
+        a.innerText = file
+        a.target = '_blank'
+      }
+    }
+
     const main = async () => {
       const svg = document.querySelector('svg')
-      const input = document.querySelector('input')
+      const input = document.querySelector('input[type=text]')
+      const file = document.querySelector('input[type=file]')
       const textarea = document.querySelector('textarea')
       let record, saveTimeout
 
@@ -138,6 +184,7 @@
         textarea.removeAttribute('readonly')
       }
 
+      updateFiles(record)
       textarea.focus()
 
       pb.collection('tabs').subscribe(record.id, e => {
@@ -147,6 +194,8 @@
         ) {
           textarea.value = e.record.content
         }
+
+        updateFiles(e.record)
       })
 
       textarea.addEventListener('input', e => {
@@ -157,6 +206,17 @@
             instance,
           })
         }, 500)
+      })
+
+      file.addEventListener('change', async (e) => {
+        file.setAttribute('disabled', 'disabled')
+
+        for (let file of e.target.files) {
+          await pb.collection('tabs').update(record.id, { 'files+': file })
+        }
+
+        file.removeAttribute('disabled')
+        file.value = ''
       })
 
       svg.addEventListener('click', e => {

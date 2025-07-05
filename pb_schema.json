@@ -38,6 +38,34 @@
         "type": "text"
       },
       {
+        "autogeneratePattern": "",
+        "hidden": false,
+        "id": "text1110487518",
+        "max": 0,
+        "min": 0,
+        "name": "instance",
+        "pattern": "",
+        "presentable": false,
+        "primaryKey": false,
+        "required": false,
+        "system": false,
+        "type": "text"
+      },
+      {
+        "hidden": false,
+        "id": "file104153177",
+        "maxSelect": 99,
+        "maxSize": 0,
+        "mimeTypes": [],
+        "name": "files",
+        "presentable": false,
+        "protected": false,
+        "required": false,
+        "system": false,
+        "thumbs": [],
+        "type": "file"
+      },
+      {
         "hidden": false,
         "id": "autodate2990389176",
         "name": "created",
